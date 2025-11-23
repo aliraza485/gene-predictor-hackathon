@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gene Effect Predictor (Generative AI Hackathon Demo)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-blue': '#107c10',
+                        'secondary-green': '#28a745',
+                        'dark-gray': '#343a40',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        .loading-ring {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+        }
+        .loading-ring:after {
+            content: " ";
+            display: block;
+            width: 24px;
+            height: 24px;
+            margin: 3px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            border-color: #fff transparent #fff transparent;
+            animation: loading-ring 1.2s linear infinite;
+        }
+        @keyframes loading-ring {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Global variables for Firebase access
+        window.app = null;
+        window.db = null;
+        window.auth = null;
+        window.userId = null;
+        window.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-gene-predictor-app';
+
+        // Initialization function
+        const initializeFirebase = async () => {
+            try {
+               
+                const manualFirebaseConfig = {
+                    apiKey: "AIzaSyA31PppkureXsWC4AlYujmMmMSnH6HELlQ", 
+                    authDomain: "gene-predictor-site.firebaseapp.com",
+                    projectId: "gene-predictor-site", 
+                    storageBucket: "gene-predictor-site.firebasestorage.app",
+                    messagingSenderId: "317498447460",
+                    appId: "1:317498447460:web:621fc22f24f58279c03171"
+                };
+
+                // Use manual config if running outside the Canvas environment
+                const firebaseConfig = typeof __firebase_config !== 'undefined' 
+                    ? JSON.parse(__firebase_config) 
+                    : manualFirebaseConfig;
+                    
+                window.app = initializeApp(firebaseConfig);
+                window.db = getFirestore(window.app);
+                window.auth = getAuth(window.app);
+
+                // Authentication
+                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                
+                onAuthStateChanged(window.auth, (user) => {
+                    if (user) {
+                        window.userId = user.uid;
+                        document.getElementById('user-id-display').textContent = `User ID: ${window.userId}`;
+                        setupRealtimeListener();
+                    } else {
+                        // Sign in anonymously if no token is available or user is signed out
+                        signInAnonymously(window.auth).catch(e => console.error("Anonymous sign-in failed:", e));
+                    }
+                });
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(window.auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(window.auth);
+                }
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                document.getElementById('status-message').textContent = 'Error: Database connection failed.';
+            }
+        };
+
+        // Realtime listener for community predictions
+        const setupRealtimeListener = () => {
+            if (!window.db || !window.appId) return;
+
+            const collectionPath = `artifacts/${window.appId}/public/data/predictions`;
+            const predictionsRef = collection(window.db, collectionPath);
+            const q = query(predictionsRef, orderBy("timestamp", "desc"), limit(5));
+            const predictionsList = document.getElementById('predictions-list');
+
+            onSnapshot(q, (snapshot) => {
+                predictionsList.innerHTML = '';
+                if (snapshot.empty) {
+                    predictionsList.innerHTML = '<li class="p-3 text-center text-gray-500">No predictions made yet. Be the first!</li>';
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const li = document.createElement('li');
+                    li.className = 'p-3 bg-white rounded-lg shadow-sm mb-2 border-l-4 ' + (data.prediction.toLowerCase() === 'beneficial' ? 'border-secondary-green' : 'border-red-500');
+                    li.innerHTML = `
+                        <p class="font-semibold text-dark-gray">${data.gene_name} (${data.modification}) in ${data.species}</p>
+                        <p class="text-sm">Result: <span class="font-bold">${data.prediction}</span></p>
+                        <p class="text-xs text-gray-500 mt-1">${new Date(data.timestamp?.toDate()).toLocaleTimeString() || 'Just now'} by ${data.userId.substring(0, 8)}...</p>
+                    `;
+                    predictionsList.appendChild(li);
+                });
+            });
+        };
+
+        window.onload = initializeFirebase;
+    </script>
+    
+    <!-- Main Application Container -->
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-primary-blue">Generative Gene Effect Predictor</h1>
+            <p class="text-lg text-gray-600 mt-2">Simulating ML Prediction & Generating Scientific Narrative</p>
+             <p id="user-id-display" class="text-xs mt-2 text-gray-500">User ID: Loading...</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Input and Prediction Form (Col 1 & 2) -->
+            <div class="lg:col-span-2 bg-white p-6 md:p-8 rounded-xl shadow-2xl">
+                <h2 class="text-2xl font-semibold text-dark-gray mb-6">Define Gene Modification</h2>
+                
+                <form id="prediction-form" class="space-y-4">
+                    <div>
+                        <label for="gene_name" class="block text-sm font-medium text-gray-700">Gene Name (e.g., MTOR, BRCA1, FLC)</label>
+                        <input type="text" id="gene_name" required value="MTOR" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:border-primary-blue focus:ring focus:ring-primary-blue focus:ring-opacity-50">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="modification" class="block text-sm font-medium text-gray-700">Modification Type</label>
+                            <select id="modification" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border bg-white focus:border-primary-blue focus:ring focus:ring-primary-blue focus:ring-opacity-50">
+                                <option value="knockout">Knockout / CRISPR Deletion</option>
+                                <option value="overexpression">Overexpression</option>
+                                <option value="knockdown">Knockdown / RNAi</option>
+                                <option value="missense mutation">Missense Mutation</option>
+                                <option value="gene editing">Gene Editing</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="species" class="block text-sm font-medium text-gray-700">Species</label>
+                            <select id="species" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border bg-white focus:border-primary-blue focus:ring focus:ring-primary-blue focus:ring-opacity-50">
+                                <option value="human">Human</option>
+                                <option value="mouse">Mouse</option>
+                                <option value="e.coli">E. coli (Bacterium)</option>
+                                <option value="arabidopsis">Arabidopsis (Plant)</option>
+                                <option value="rice">Rice (Plant)</option>
+                                <option value="soybean">Soybean (Plant)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="pathway_context" class="block text-sm font-medium text-gray-700">Pathway Context (Crucial for Narrative)</label>
+                        <textarea id="pathway_context" rows="2" placeholder="e.g., PI3K-AKT signaling: Pro-survival pathway regulating metabolism, growth, and apoptosis." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:border-primary-blue focus:ring focus:ring-primary-blue focus:ring-opacity-50">PI3K-AKT signaling: Pro-survival pathway regulating metabolism, growth, and apoptosis.</textarea>
+                    </div>
+
+                    <button type="submit" id="predict-button" class="w-full py-3 px-4 bg-primary-blue text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-150 ease-in-out flex items-center justify-center">
+                        Predict & Generate Narrative
+                        <span id="loading-spinner" class="ml-2 hidden loading-ring"></span>
+                    </button>
+                </form>
+
+                <!-- Prediction Output -->
+                <div id="result-card" class="mt-8 p-6 border border-gray-200 rounded-lg shadow-inner bg-gray-50 hidden">
+                    <h3 class="text-xl font-bold mb-4 flex items-center justify-between text-dark-gray">
+                        Predicted Effect: <span id="predicted-label" class="text-xl font-extrabold text-red-600"></span>
+                    </h3>
+                    <p class="font-semibold text-primary-blue mb-2">Generative AI Narrative:</p>
+                    <div id="narrative-output" class="text-gray-700 bg-white p-4 rounded-md border border-gray-200 italic">
+                        <!-- Narrative content goes here -->
+                    </div>
+                    <p id="api-status" class="text-xs mt-3 text-red-500"></p>
+                </div>
+            </div>
+
+            <!-- Community Predictions (Col 3) -->
+            <div class="lg:col-span-1">
+                <div class="bg-gray-200 p-6 rounded-xl shadow-lg h-full">
+                    <h2 class="text-2xl font-semibold text-dark-gray mb-4 border-b pb-2">Community Predictions</h2>
+                    <ul id="predictions-list" class="space-y-3">
+                        <li class="p-3 text-center text-gray-500">Loading community data...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const apiKey = ""; // Canvas will provide this in runtime
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        // --- Simulated ML Prediction Logic ---
+        // Simulates the result of the trained model based on feature weights derived from analysis
+        function simulateMLPrediction(modification, species) {
+            modification = modification.toLowerCase();
+            species = species.toLowerCase();
+
+            // Based on feature weights from the Logistic Regression interpretation (Step 1.1):
+            let score = 0;
+            
+            // 1. Modification Type weights (Overexpression/Editing -> Positive; Knockout/down -> Negative)
+            if (modification === 'overexpression' || modification === 'gene editing') {
+                score += 0.65; 
+            } else if (modification === 'knockout' || modification === 'knockdown' || modification === 'crispr deletion' || modification === 'crispr knockout') {
+                score -= 0.8; 
+            }
+
+            // 2. Species Bias weights (Plant/Bacterium -> Positive; Mammalian -> Negative)
+            if (species === 'e.coli' || species === 'rice' || species === 'soybean' || species === 'arabidopsis') {
+                score += 0.4; 
+            } else if (species === 'human' || species === 'mouse') {
+                score -= 0.3; 
+            }
+            
+            // 3. Final Label Decision (simple threshold)
+            if (score > 0.1) {
+                return 'BENEFICIAL';
+            } else if (score < -0.4) {
+                return 'HARMFUL';
+            } else {
+                return 'OTHER';
+            }
+        }
+
+        // --- Generative AI Narrative Function ---
+        const generateNarrative = async (gene, mod, species, context, prediction) => {
+            const path_name = context.split(':')[0].trim();
+            
+            const systemPrompt = "You are a highly experienced computational biologist. Your task is to generate a concise, scientifically plausible narrative (maximum 3 sentences) explaining a predicted genetic outcome. The tone must be professional and academic.";
+            
+            const userQuery = `
+            Based on the following data and the predicted outcome, generate an explanatory narrative:
+            - Gene: ${gene}
+            - Modification: ${mod}
+            - Species: ${species}
+            - Associated Pathway: ${context}
+            - Predicted Outcome: ${prediction}
+
+            The narrative must connect the gene's pathway function, the modification type, and the final predicted effect.
+            `;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+            
+            let resultText = '';
+            let retries = 0;
+            const maxRetries = 3;
+
+            while (retries < maxRetries) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API returned status ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const candidate = result.candidates?.[0];
+
+                    if (candidate && candidate.content?.parts?.[0]?.text) {
+                        resultText = candidate.content.parts[0].text;
+                        break; // Success
+                    } else {
+                        throw new Error("Invalid response structure from API.");
+                    }
+                } catch (error) {
+                    console.error(`Attempt ${retries + 1} failed:`, error);
+                    retries++;
+                    if (retries < maxRetries) {
+                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000)); // Exponential backoff
+                    } else {
+                        const prediction_lower = prediction.toLowerCase();
+                        resultText = `[Generative AI failed after ${maxRetries} attempts. Simulation narrative: Modifying ${gene} via ${mod} in ${species} affects the ${path_name} pathway, leading to the predicted ${prediction_lower} outcome.]`;
+                    }
+                }
+            }
+            return resultText;
+        };
+
+        // --- Form Submission Handler ---
+        document.getElementById('prediction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const gene = document.getElementById('gene_name').value.trim();
+            const mod = document.getElementById('modification').value.trim();
+            const species = document.getElementById('species').value.trim();
+            const context = document.getElementById('pathway_context').value.trim();
+
+            const predictButton = document.getElementById('predict-button');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const resultCard = document.getElementById('result-card');
+            const predictedLabelSpan = document.getElementById('predicted-label');
+            const narrativeOutput = document.getElementById('narrative-output');
+            const apiStatus = document.getElementById('api-status');
+
+            // Reset UI
+            predictedLabelSpan.textContent = '';
+            narrativeOutput.innerHTML = '<span class="text-gray-500">Generating scientific narrative...</span>';
+            resultCard.classList.remove('hidden');
+            apiStatus.textContent = '';
+            predictButton.disabled = true;
+            loadingSpinner.classList.remove('hidden');
+
+            // 1. Run ML Simulation
+            const mlPrediction = simulateMLPrediction(mod, species);
+            
+            // Update the ML prediction visually
+            predictedLabelSpan.textContent = mlPrediction;
+            if (mlPrediction === 'BENEFICIAL') {
+                predictedLabelSpan.className = 'text-xl font-extrabold text-secondary-green';
+            } else if (mlPrediction === 'HARMFUL') {
+                predictedLabelSpan.className = 'text-xl font-extrabold text-red-600';
+            } else {
+                predictedLabelSpan.className = 'text-xl font-extrabold text-blue-500';
+            }
+
+            // 2. Generate Narrative (LLM Call)
+            const narrative = await generateNarrative(gene, mod, species, context, mlPrediction);
+            
+            narrativeOutput.textContent = narrative.trim();
+
+            // 3. Save Prediction to Firestore for sharing
+            if (window.db && window.appId && window.userId) {
+                try {
+                    const collectionPath = `artifacts/${window.appId}/public/data/predictions`;
+                    await addDoc(collection(window.db, collectionPath), {
+                        gene_name: gene,
+                        modification: mod,
+                        species: species,
+                        prediction: mlPrediction,
+                        narrative: narrative.trim(),
+                        userId: window.userId,
+                        timestamp: serverTimestamp()
+                    });
+                } catch (error) {
+                    console.error("Failed to save prediction to Firestore:", error);
+                    apiStatus.textContent = "Warning: Failed to save prediction for sharing.";
+                }
+            }
+
+            // Final cleanup
+            predictButton.disabled = false;
+            loadingSpinner.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
