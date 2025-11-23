@@ -1,0 +1,21 @@
+﻿gene_name,modification_type,species,expected_outcome,notes
+BRCA1,knockout,human,reduces DNA repair efficiency,source: KEGG
+TP53,missense mutation,human,loss of cell-cycle arrest and apoptosis,precursor for tumorigenesis
+CRISPR1,overexpression,E.coli,increased adaptive immunity against phages,CRISPR-Cas system activation
+FLC,knockdown,Arabidopsis,early flowering phenotype,affects vernalization pathway
+MYOD1,overexpression,mouse,enhanced skeletal muscle differentiation,myogenesis pathway activation
+ACTN3,knockout,human,reduced fast-twitch muscle performance,athlete phenotype studies
+ALS,CRISPR deletion,rice,increased grain yield,auxin signaling adjustment
+CYP3A4,overexpression,human,increased drug metabolism rate,affects pharmacokinetics
+G6PD,loss-of-function,human,increased oxidative stress sensitivity,red blood cell pathway disturbance
+PDS,CRISPR knockout,tomato,albino phenotype,carotenoid biosynthesis interruption
+NPR1,overexpression,Arabidopsis,improved systemic acquired resistance,SA signaling enhancement
+FAD2,knockout,soybean,increased oleic acid content,fatty acid biosynthesis shift
+HBB,gene editing,human,restored β-globin synthesis,target for sickle-cell therapy
+SOD1,knockout,mouse,accumulation of ROS leading to neurodegeneration,oxidative stress pathway
+RBCS,knockdown,rice,reduced photosynthesis and biomass,Rubisco subunit disruption
+ATG5,knockout,mouse,blocked autophagy pathway,important in apoptosis and immunity
+WRKY45,overexpression,rice,increased blast resistance,immune signaling
+ACCase,CRISPR mutation,wheat,herbicide resistance gained,fatty acid synthesis enzyme mutation
+PRDM9,knockout,mouse,loss of meiotic recombination hotspots,affects fertility pathways
+DHFR,overexpression,E.coli,increased folate metabolism,metabolic engineering example
