@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gene Effect Predictor (Generative AI Hackathon Demo)</title>
+    <!-- Tailwind CSS (Simulated) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .loading-ring { display: inline-block; width: 30px; height: 30px; }
+        .loading-ring:after {
+            content: " "; display: block; width: 24px; height: 24px; margin: 3px; border-radius: 50%;
+            border: 3px solid #fff; border-color: #fff transparent #fff transparent;
+            animation: loading-ring 1.2s linear infinite;
+        }
+        @keyframes loading-ring { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Simulated colors */
+        .primary-blue { background-color: #107c10; }
+        .text-primary-blue { color: #107c10; }
+        .text-secondary-green { color: #28a745; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-primary-blue">Generative Gene Effect Predictor</h1>
+            <p class="text-lg text-gray-600 mt-2">Simulating ML Prediction & Generating Scientific Narrative</p>
+             <p class="text-xs mt-2 text-gray-500">User ID: a9b3e1f0... (Simulated)</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Input and Prediction Form (Col 1 & 2) -->
+            <div class="lg:col-span-2 bg-white p-6 md:p-8 rounded-xl shadow-2xl">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Define Gene Modification</h2>
+                
+                <form class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Gene Name (e.g., MTOR, BRCA1, FLC)</label>
+                        <input type="text" value="MTOR" disabled class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border bg-gray-50">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Modification Type</label>
+                            <select disabled class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border bg-gray-50">
+                                <option>Knockout / CRISPR Deletion</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Species</label>
+                            <select disabled class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border bg-gray-50">
+                                <option>Human</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Pathway Context (Crucial for Narrative)</label>
+                        <textarea rows="2" disabled class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border bg-gray-50">PI3K-AKT signaling: Pro-survival pathway regulating metabolism, growth, and apoptosis.</textarea>
+                    </div>
+
+                    <button type="submit" disabled class="w-full py-3 px-4 primary-blue text-white font-semibold rounded-lg shadow-md flex items-center justify-center opacity-70">
+                        Predict & Generate Narrative
+                        <span class="ml-2 loading-ring"></span>
+                    </button>
+                </form>
+
+                <!-- Prediction Output (Simulated Result) -->
+                <div class="mt-8 p-6 border border-gray-200 rounded-lg shadow-inner bg-gray-50">
+                    <h3 class="text-xl font-bold mb-4 flex items-center justify-between text-gray-800">
+                        Predicted Effect: <span class="text-xl font-extrabold text-secondary-green">BENEFICIAL</span>
+                    </h3>
+                    <p class="font-semibold text-primary-blue mb-2">Generative AI Narrative:</p>
+                    <div class="text-gray-700 bg-white p-4 rounded-md border border-gray-200 italic">
+                        CRISPR deletion of MTOR, a key regulator in the PI3K-AKT signaling pathway, likely resulted in a targeted metabolic adjustment. This pathway perturbation caused a beneficial change, such as enhanced resilience or increased yield, consistent with genetic engineering strategies in Human.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Community Predictions (Col 3) -->
+            <div class="lg:col-span-1">
+                <div class="bg-gray-200 p-6 rounded-xl shadow-lg h-full">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">Community Predictions</h2>
+                    <ul class="space-y-3">
+                        <li class="p-3 bg-white rounded-lg shadow-sm mb-2 border-l-4 border-red-500">
+                            <p class="font-semibold text-gray-800">BRCA1 (knockout) in human</p>
+                            <p class="text-sm">Result: <span class="font-bold">HARMFUL</span></p>
+                            <p class="text-xs text-gray-500 mt-1">10:05:30 AM by a2b4c6d8...</p>
+                        </li>
+                        <li class="p-3 bg-white rounded-lg shadow-sm mb-2 border-l-4 border-secondary-green">
+                            <p class="font-semibold text-gray-800">FAD2 (knockout) in soybean</p>
+                            <p class="text-sm">Result: <span class="font-bold">BENEFICIAL</span></p>
+                            <p class="text-xs text-gray-500 mt-1">10:04:15 AM by f1a2b3c4...</p>
+                        </li>
+                        <li class="p-3 bg-white rounded-lg shadow-sm mb-2 border-l-4 border-secondary-green">
+                            <p class="font-semibold text-gray-800">WRKY45 (overexpression) in rice</p>
+                            <p class="text-sm">Result: <span class="font-bold">BENEFICIAL</span></p>
+                            <p class="text-xs text-gray-500 mt-1">10:02:55 AM by 00ff99e0...</p>
+                        </li>
+                        <li class="p-3 text-center text-gray-500">...Live updates continue...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
